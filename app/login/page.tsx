@@ -78,10 +78,6 @@ export default function LoginPage() {
           </Link>
         </p>
 
-        <div className="mt-4 p-3 bg-gray-50 rounded-lg text-xs text-gray-500">
-          <p className="font-medium mb-1">테스트 관리자 계정</p>
-          <p>이메일: admin@shop.com / 비밀번호: admin1234</p>
-        </div>
       </div>
     </div>
   );
