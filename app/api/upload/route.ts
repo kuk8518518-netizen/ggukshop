@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getUser } from "@/lib/auth";
-import path from "path";
-import fs from "fs";
 
 export async function POST(req: NextRequest) {
   const user = await getUser();
@@ -16,18 +14,16 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "파일이 없습니다." }, { status: 400 });
   }
 
-  const bytes = await file.arrayBuffer();
-  const buffer = Buffer.from(bytes);
-
-  const ext = path.extname(file.name) || ".jpg";
-  const filename = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}${ext}`;
-  const uploadDir = path.join(process.cwd(), "public", "uploads");
-
-  if (!fs.existsSync(uploadDir)) {
-    fs.mkdirSync(uploadDir, { recursive: true });
+  // 5MB 제한
+  if (file.size > 5 * 1024 * 1024) {
+    return NextResponse.json({ error: "파일 크기는 5MB 이하만 가능합니다." }, { status: 400 });
   }
 
-  fs.writeFileSync(path.join(uploadDir, filename), buffer);
+  const bytes = await file.arrayBuffer();
+  const buffer = Buffer.from(bytes);
+  const base64 = buffer.toString("base64");
+  const mimeType = file.type || "image/jpeg";
+  const dataUrl = `data:${mimeType};base64,${base64}`;
 
-  return NextResponse.json({ url: `/uploads/${filename}` });
+  return NextResponse.json({ url: dataUrl });
 }
