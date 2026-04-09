@@ -68,14 +68,25 @@ export default function AdminPage() {
     const file = e.target.files?.[0];
     if (!file) return;
     setUploading(true);
-    const formData = new FormData();
-    formData.append("file", file);
-    const res = await fetch("/api/upload", { method: "POST", body: formData });
-    const data = await res.json();
-    if (res.ok) {
-      setForm((prev) => ({ ...prev, image: data.url }));
-    }
-    setUploading(false);
+
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      const MAX = 400;
+      let w = img.width;
+      let h = img.height;
+      if (w > MAX || h > MAX) {
+        if (w > h) { h = (h / w) * MAX; w = MAX; }
+        else { w = (w / h) * MAX; h = MAX; }
+      }
+      canvas.width = w;
+      canvas.height = h;
+      canvas.getContext("2d")!.drawImage(img, 0, 0, w, h);
+      const dataUrl = canvas.toDataURL("image/jpeg", 0.7);
+      setForm((prev) => ({ ...prev, image: dataUrl }));
+      setUploading(false);
+    };
+    img.src = URL.createObjectURL(file);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
