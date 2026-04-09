@@ -182,7 +182,7 @@ export default function AdminPage() {
   };
 
   const statusMap: Record<string, string> = {
-    pending: "주문접수", confirmed: "확인완료", shipping: "배송중", delivered: "배송완료", cancelled: "취소됨",
+    pending: "주문접수", awaiting_deposit: "입금대기", deposit_confirmed: "입금확인", confirmed: "확인완료", shipping: "배송중", delivered: "배송완료", cancelled: "취소됨",
   };
 
   return (

@@ -24,6 +24,8 @@ interface Order {
 
 const statusMap: Record<string, string> = {
   pending: "주문접수",
+  awaiting_deposit: "입금대기",
+  deposit_confirmed: "입금확인",
   confirmed: "확인완료",
   shipping: "배송중",
   delivered: "배송완료",

@@ -107,7 +107,7 @@ export default function CheckoutPage() {
     const data = await res.json();
 
     if (res.ok) {
-      router.push(`/checkout/complete?orderId=${data.orderId}`);
+      router.push(`/checkout/complete?orderId=${data.orderId}&payment=${form.paymentMethod}`);
     } else {
       setError(data.error);
       setSubmitting(false);
@@ -256,6 +256,18 @@ export default function CheckoutPage() {
                 </label>
               ))}
             </div>
+
+            {form.paymentMethod === "virtual" && (
+              <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <p className="font-bold text-sm mb-2">입금 계좌 안내</p>
+                <div className="text-sm space-y-1">
+                  <p><span className="text-gray-500">은행:</span> <span className="font-semibold">국민은행</span></p>
+                  <p><span className="text-gray-500">계좌:</span> <span className="font-semibold">944502-00-513288</span></p>
+                  <p><span className="text-gray-500">예금주:</span> <span className="font-semibold">국예찬</span></p>
+                </div>
+                <p className="text-xs text-yellow-700 mt-3">주문 후 위 계좌로 입금해주시면, 확인 후 배송이 시작됩니다.</p>
+              </div>
+            )}
           </div>
         </div>
 

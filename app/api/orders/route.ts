@@ -47,9 +47,10 @@ export async function POST(req: NextRequest) {
 
   const total = cartItems.reduce((sum: number, item: any) => sum + item.price * item.quantity, 0);
 
+  const orderStatus = paymentMethod === "virtual" ? "awaiting_deposit" : "pending";
   const order = await db.execute({
-    sql: "INSERT INTO orders (user_id, total, receiver_name, phone, zipcode, address, address_detail, payment_method) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-    args: [user.id, total, receiverName, phone, zipcode || "", address, addressDetail || "", paymentMethod || "card"],
+    sql: "INSERT INTO orders (user_id, total, status, receiver_name, phone, zipcode, address, address_detail, payment_method) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+    args: [user.id, total, orderStatus, receiverName, phone, zipcode || "", address, addressDetail || "", paymentMethod || "card"],
   });
   const orderId = Number(order.lastInsertRowid);
 
