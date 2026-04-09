@@ -30,8 +30,8 @@ export default function Navbar() {
   return (
     <nav className="bg-white border-b sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
-        <Link href="/" className="text-xl font-bold text-gray-900">
-          Shop
+        <Link href="/" className="text-2xl font-extrabold text-gray-900">
+          꾹가네 쇼핑몰
         </Link>
 
         <div className="flex items-center gap-6">
