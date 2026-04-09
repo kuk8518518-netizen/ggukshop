@@ -1,18 +1,18 @@
 import { NextResponse } from "next/server";
-import db from "@/lib/db";
+import db, { initDB } from "@/lib/db";
 import bcrypt from "bcryptjs";
 
 export async function POST() {
-  const adminExists = db.prepare("SELECT id FROM users WHERE role = 'admin'").get();
-  if (!adminExists) {
+  await initDB();
+
+  const adminCheck = await db.execute("SELECT id FROM users WHERE role = 'admin'");
+  if (adminCheck.rows.length === 0) {
     const hashed = bcrypt.hashSync("admin1234", 10);
-    db.prepare("INSERT INTO users (email, password, name, role) VALUES (?, ?, ?, ?)").run(
-      "admin@shop.com", hashed, "관리자", "admin"
-    );
+    await db.execute({ sql: "INSERT INTO users (email, password, name, role) VALUES (?, ?, ?, ?)", args: ["admin@shop.com", hashed, "관리자", "admin"] });
   }
 
-  const productCount = (db.prepare("SELECT COUNT(*) as cnt FROM products").get() as any).cnt;
-  if (productCount === 0) {
+  const productCount = await db.execute("SELECT COUNT(*) as cnt FROM products");
+  if ((productCount.rows[0] as any).cnt === 0) {
     const products = [
       { name: "클래식 티셔츠", desc: "편안한 면 소재의 기본 티셔츠", price: 29000, category: "의류", stock: 50 },
       { name: "슬림핏 청바지", desc: "스타일리시한 슬림핏 데님", price: 59000, category: "의류", stock: 30 },
@@ -23,10 +23,8 @@ export async function POST() {
       { name: "토트백", desc: "넉넉한 사이즈의 캔버스 토트백", price: 35000, category: "가방", stock: 35 },
       { name: "후드 집업", desc: "따뜻한 기모 안감 후드 집업", price: 55000, category: "의류", stock: 45 },
     ];
-
-    const stmt = db.prepare("INSERT INTO products (name, description, price, category, stock) VALUES (?, ?, ?, ?, ?)");
     for (const p of products) {
-      stmt.run(p.name, p.desc, p.price, p.category, p.stock);
+      await db.execute({ sql: "INSERT INTO products (name, description, price, category, stock) VALUES (?, ?, ?, ?, ?)", args: [p.name, p.desc, p.price, p.category, p.stock] });
     }
   }
 

@@ -1,104 +1,81 @@
-import Database from "better-sqlite3";
-import path from "path";
+import { createClient } from "@libsql/client";
 
-const dbPath = path.join(process.cwd(), "shop.db");
-const db = new Database(dbPath);
+const db = createClient({
+  url: process.env.TURSO_URL || "file:shop.db",
+  authToken: process.env.TURSO_AUTH_TOKEN,
+});
 
-db.pragma("journal_mode = WAL");
-db.pragma("foreign_keys = ON");
+let initialized = false;
 
-db.exec(`
-  CREATE TABLE IF NOT EXISTS users (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    email TEXT UNIQUE NOT NULL,
-    password TEXT NOT NULL,
-    name TEXT NOT NULL,
-    role TEXT DEFAULT 'user',
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-  );
+export async function initDB() {
+  if (initialized) return;
+  initialized = true;
 
-  CREATE TABLE IF NOT EXISTS products (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL,
-    description TEXT,
-    price INTEGER NOT NULL,
-    image TEXT,
-    category TEXT,
-    stock INTEGER DEFAULT 0,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-  );
+  await db.executeMultiple(`
+    CREATE TABLE IF NOT EXISTS users (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      email TEXT UNIQUE NOT NULL,
+      password TEXT NOT NULL,
+      name TEXT NOT NULL,
+      role TEXT DEFAULT 'user',
+      phone TEXT,
+      zipcode TEXT,
+      address TEXT,
+      address_detail TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
 
-  CREATE TABLE IF NOT EXISTS cart_items (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER NOT NULL,
-    product_id INTEGER NOT NULL,
-    quantity INTEGER DEFAULT 1,
-    FOREIGN KEY (user_id) REFERENCES users(id),
-    FOREIGN KEY (product_id) REFERENCES products(id)
-  );
+    CREATE TABLE IF NOT EXISTS products (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      description TEXT,
+      price INTEGER NOT NULL,
+      image TEXT,
+      category TEXT,
+      stock INTEGER DEFAULT 0,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
 
-  CREATE TABLE IF NOT EXISTS orders (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER NOT NULL,
-    total INTEGER NOT NULL,
-    status TEXT DEFAULT 'pending',
-    receiver_name TEXT,
-    phone TEXT,
-    zipcode TEXT,
-    address TEXT,
-    address_detail TEXT,
-    payment_method TEXT DEFAULT 'card',
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id)
-  );
+    CREATE TABLE IF NOT EXISTS cart_items (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      product_id INTEGER NOT NULL,
+      quantity INTEGER DEFAULT 1
+    );
 
-  CREATE TABLE IF NOT EXISTS order_items (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    order_id INTEGER NOT NULL,
-    product_id INTEGER NOT NULL,
-    quantity INTEGER NOT NULL,
-    price INTEGER NOT NULL,
-    FOREIGN KEY (order_id) REFERENCES orders(id),
-    FOREIGN KEY (product_id) REFERENCES products(id)
-  );
+    CREATE TABLE IF NOT EXISTS orders (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      total INTEGER NOT NULL,
+      status TEXT DEFAULT 'pending',
+      receiver_name TEXT,
+      phone TEXT,
+      zipcode TEXT,
+      address TEXT,
+      address_detail TEXT,
+      payment_method TEXT DEFAULT 'card',
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
 
-  CREATE TABLE IF NOT EXISTS categories (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT UNIQUE NOT NULL
-  );
-`);
+    CREATE TABLE IF NOT EXISTS order_items (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      order_id INTEGER NOT NULL,
+      product_id INTEGER NOT NULL,
+      quantity INTEGER NOT NULL,
+      price INTEGER NOT NULL
+    );
 
-// 기존 orders 테이블에 새 컬럼 추가 (이미 있으면 무시)
-const orderColumns = db.prepare("PRAGMA table_info(orders)").all() as any[];
-const columnNames = orderColumns.map((c: any) => c.name);
-if (!columnNames.includes("receiver_name")) {
-  db.exec(`
-    ALTER TABLE orders ADD COLUMN receiver_name TEXT;
-    ALTER TABLE orders ADD COLUMN phone TEXT;
-    ALTER TABLE orders ADD COLUMN zipcode TEXT;
-    ALTER TABLE orders ADD COLUMN address TEXT;
-    ALTER TABLE orders ADD COLUMN address_detail TEXT;
-    ALTER TABLE orders ADD COLUMN payment_method TEXT DEFAULT 'card';
+    CREATE TABLE IF NOT EXISTS categories (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT UNIQUE NOT NULL
+    );
   `);
-}
 
-// users 테이블에 주소 컬럼 추가
-const userColumns = db.prepare("PRAGMA table_info(users)").all() as any[];
-const userColNames = userColumns.map((c: any) => c.name);
-if (!userColNames.includes("phone")) {
-  db.exec(`
-    ALTER TABLE users ADD COLUMN phone TEXT;
-    ALTER TABLE users ADD COLUMN zipcode TEXT;
-    ALTER TABLE users ADD COLUMN address TEXT;
-    ALTER TABLE users ADD COLUMN address_detail TEXT;
-  `);
-}
-
-const catCount = (db.prepare("SELECT COUNT(*) as cnt FROM categories").get() as any).cnt;
-if (catCount === 0) {
-  const stmt = db.prepare("INSERT OR IGNORE INTO categories (name) VALUES (?)");
-  for (const name of ["의류", "신발", "가방"]) {
-    stmt.run(name);
+  const catCount = await db.execute("SELECT COUNT(*) as cnt FROM categories");
+  if ((catCount.rows[0] as any).cnt === 0) {
+    for (const name of ["의류", "신발", "가방"]) {
+      await db.execute({ sql: "INSERT OR IGNORE INTO categories (name) VALUES (?)", args: [name] });
+    }
   }
 }
 
