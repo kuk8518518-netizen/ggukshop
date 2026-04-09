@@ -45,6 +45,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "장바구니가 비어있습니다." }, { status: 400 });
   }
 
+  for (const item of cartItems) {
+    if (item.stock < item.quantity) {
+      return NextResponse.json({ error: `재고 부족: 상품의 재고가 ${item.stock}개 남았습니다.` }, { status: 400 });
+    }
+  }
+
   const total = cartItems.reduce((sum: number, item: any) => sum + item.price * item.quantity, 0);
 
   const orderStatus = paymentMethod === "virtual" ? "awaiting_deposit" : "pending";
