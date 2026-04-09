@@ -1,17 +1,24 @@
-import { createClient } from "@libsql/client";
+import { createClient, type Client } from "@libsql/client";
 
-const db = createClient({
-  url: process.env.TURSO_URL || "file:shop.db",
-  authToken: process.env.TURSO_AUTH_TOKEN,
-});
-
+let db: Client | null = null;
 let initialized = false;
 
+function getDB(): Client {
+  if (!db) {
+    db = createClient({
+      url: process.env.TURSO_URL || "file:shop.db",
+      authToken: process.env.TURSO_AUTH_TOKEN,
+    });
+  }
+  return db;
+}
+
 export async function initDB() {
-  if (initialized) return;
+  if (initialized) return getDB();
   initialized = true;
 
-  await db.executeMultiple(`
+  const client = getDB();
+  await client.executeMultiple(`
     CREATE TABLE IF NOT EXISTS users (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       email TEXT UNIQUE NOT NULL,
@@ -71,12 +78,15 @@ export async function initDB() {
     );
   `);
 
-  const catCount = await db.execute("SELECT COUNT(*) as cnt FROM categories");
+  const catCount = await client.execute("SELECT COUNT(*) as cnt FROM categories");
   if ((catCount.rows[0] as any).cnt === 0) {
     for (const name of ["의류", "신발", "가방"]) {
-      await db.execute({ sql: "INSERT OR IGNORE INTO categories (name) VALUES (?)", args: [name] });
+      await client.execute({ sql: "INSERT OR IGNORE INTO categories (name) VALUES (?)", args: [name] });
     }
   }
+
+  return client;
 }
 
-export default db;
+export default { get execute() { return getDB().execute.bind(getDB()); } };
+export { getDB };

@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import db, { initDB } from "@/lib/db";
+import { initDB } from "@/lib/db";
 import { getUser } from "@/lib/auth";
 
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  await initDB();
+  const db = await initDB();
   const user = await getUser();
   if (!user || user.role !== "admin") return NextResponse.json({ error: "권한이 없습니다." }, { status: 403 });
 

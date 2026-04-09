@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import db, { initDB } from "@/lib/db";
+import { initDB } from "@/lib/db";
 import { getUser } from "@/lib/auth";
 
 export async function GET(req: NextRequest) {
-  await initDB();
+  const db = await initDB();
   const { searchParams } = new URL(req.url);
   const category = searchParams.get("category");
   const search = searchParams.get("search");
@@ -21,7 +21,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  await initDB();
+  const db = await initDB();
   const user = await getUser();
   if (!user || user.role !== "admin") {
     return NextResponse.json({ error: "권한이 없습니다." }, { status: 403 });

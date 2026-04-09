@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import db, { initDB } from "@/lib/db";
+import { initDB } from "@/lib/db";
 import { getUser } from "@/lib/auth";
 
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  await initDB();
+  const db = await initDB();
   const { id } = await params;
   const result = await db.execute({ sql: "SELECT * FROM products WHERE id = ?", args: [id] });
   if (result.rows.length === 0) {
@@ -13,7 +13,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
 }
 
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  await initDB();
+  const db = await initDB();
   const user = await getUser();
   if (!user || user.role !== "admin") return NextResponse.json({ error: "권한이 없습니다." }, { status: 403 });
 
@@ -27,7 +27,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
 }
 
 export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  await initDB();
+  const db = await initDB();
   const user = await getUser();
   if (!user || user.role !== "admin") return NextResponse.json({ error: "권한이 없습니다." }, { status: 403 });
 

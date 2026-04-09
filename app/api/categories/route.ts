@@ -1,15 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
-import db, { initDB } from "@/lib/db";
+import { initDB } from "@/lib/db";
 import { getUser } from "@/lib/auth";
 
 export async function GET() {
-  await initDB();
+  const db = await initDB();
   const result = await db.execute("SELECT * FROM categories ORDER BY id");
   return NextResponse.json(result.rows);
 }
 
 export async function POST(req: NextRequest) {
-  await initDB();
+  const db = await initDB();
   const user = await getUser();
   if (!user || user.role !== "admin") return NextResponse.json({ error: "권한이 없습니다." }, { status: 403 });
 
@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
 }
 
 export async function PUT(req: NextRequest) {
-  await initDB();
+  const db = await initDB();
   const user = await getUser();
   if (!user || user.role !== "admin") return NextResponse.json({ error: "권한이 없습니다." }, { status: 403 });
 
@@ -39,7 +39,7 @@ export async function PUT(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
-  await initDB();
+  const db = await initDB();
   const user = await getUser();
   if (!user || user.role !== "admin") return NextResponse.json({ error: "권한이 없습니다." }, { status: 403 });
 

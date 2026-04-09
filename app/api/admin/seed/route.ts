@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
-import db, { initDB } from "@/lib/db";
+import { initDB } from "@/lib/db";
 import bcrypt from "bcryptjs";
 
 export async function POST() {
-  await initDB();
+  const db = await initDB();
 
   const adminCheck = await db.execute("SELECT id FROM users WHERE role = 'admin'");
   if (adminCheck.rows.length === 0) {
